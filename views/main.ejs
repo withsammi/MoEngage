@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>HTTP Dog Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <h1>HTTP Dog API Viewer</h1>
+
+    <div class="container">
+        <input type="text" id="searchBox" placeholder="Search HTTP Code..." autocomplete="off">
+        <button id="saveListBtn" style="display:none;">Save Filtered List</button>
+        <button id="viewSavedListsBtn">View Saved Lists</button>
+    </div>
+
+    <div id="imageContainer"></div>
+    <div id="savedListsContainer" style="display:none;"></div>  <!-- Container to display saved lists -->
+
+    <script>
+        const imageContainer = document.getElementById("imageContainer");
+        const searchBox = document.getElementById("searchBox");
+        const saveListBtn = document.getElementById("saveListBtn");
+        const viewSavedListsBtn = document.getElementById("viewSavedListsBtn");
+        const savedListsContainer = document.getElementById("savedListsContainer");
+
+        // All HTTP codes (from 100 to 511)
+        const httpCodes = [
+            100, 101, 102, 103, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
+            300, 301, 302, 303, 304, 305, 307, 308, 400, 401, 402, 403, 404, 405,
+            406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 421,
+            422, 423, 424, 425, 426, 428, 429, 431, 451, 500, 501, 502, 503, 504,
+            505, 506, 507, 508, 510, 511
+        ];
+
+        let filteredCodes = []; // To store filtered codes for saving
+
+        // Function to preload images
+        function loadImages() {
+            imageContainer.innerHTML = ""; // Clear existing images
+
+            httpCodes.forEach(code => {
+                const div = document.createElement("div");
+                div.classList.add("image-item");
+                div.setAttribute("data-code", code.toString());
+
+                const figure = document.createElement("figure");
+
+                const img = document.createElement("img");
+                img.src = `https://http.dog/${code}.jpg`;
+                img.alt = `HTTP ${code}`;
+                img.width = 200;
+                img.loading = "lazy";  // Lazy loading images for performance
+
+                const caption = document.createElement("figcaption");
+                caption.textContent = `HTTP ${code}`;
+
+                figure.appendChild(img);
+                figure.appendChild(caption);
+                div.appendChild(figure);
+                imageContainer.appendChild(div);
+            });
+        }
+
+        // Function to filter images using regex
+        function filterImages() {
+            const query = searchBox.value.trim();
+            filteredCodes = []; // Clear previously filtered codes
+
+            if (!query) {
+                // If no query, show all images
+                document.querySelectorAll(".image-item").forEach(item => item.style.display = "block");
+                saveListBtn.style.display = "none"; // Hide save button if no filter
+                return;
+            }
+
+            // Regex that matches the start of the HTTP code (^) and ensures the code starts with the query
+            const regex = new RegExp(`^${query}`, "i");  // "i" for case-insensitive search
+
+            document.querySelectorAll(".image-item").forEach(item => {
+                const code = item.getAttribute("data-code");
+                if (regex.test(code)) {
+                    item.style.display = "block";  // Show if code matches the regex
+                    filteredCodes.push({
+                        response_code: code,
+                        image_url: item.querySelector("img").src
+                    });
+                } else {
+                    item.style.display = "none";   // Hide if code doesn't match
+                }
+            });
+
+            // Show the save button if there are filtered codes
+            saveListBtn.style.display = filteredCodes.length > 0 ? "block" : "none";
+        }
+
+        // Function to save filtered list
+        async function saveList() {
+            const listName = prompt("Enter a name for your list:");
+            if (!listName) return alert("List name is required!");
+
+            if (filteredCodes.length === 0) return alert("No items to save!");
+
+            try {
+                const response = await axios.post("/save-list", { listName, filteredCodes });
+                alert(response.data.message);
+            } catch (error) {
+                alert("Error saving list!");
+            }
+        }
+
+        async function viewSavedLists() {
+    try {
+        const response = await axios.get("/lists/view");
+        console.log(response.data);  // Debugging output to check the structure of the response
+
+        const lists = response.data.lists;  // Expecting 'lists' to be an array
+
+        if (!Array.isArray(lists)) {
+            // If the data isn't an array or lists is undefined
+            savedListsContainer.innerHTML = "<p>No saved lists found or data is invalid!</p>";
+        } else if (lists.length === 0) {
+            savedListsContainer.innerHTML = "<p>No saved lists found!</p>";
+        } else {
+            let listHTML = "";
+            lists.forEach(list => {
+                listHTML += `<div class="list">
+                                <h3>${list.name} (Created on: ${new Date(list.created_at).toLocaleDateString()})</h3>
+                                <ul>`;
+                list.items.forEach(item => {
+                    listHTML += `<li>
+                                    <img src="${item.image_url}" alt="HTTP ${item.response_code}" width="100">
+                                    <p>HTTP ${item.response_code}</p>
+                                </li>`;
+                });
+                listHTML += `</ul></div>`;
+            });
+            savedListsContainer.innerHTML = listHTML;
+        }
+
+        savedListsContainer.style.display = "block"; // Show the saved lists container
+    } catch (error) {
+        console.error("Error fetching saved lists:", error);
+        alert("Error fetching saved lists!");
+    }
+}
+
+
+
+        // Event listener for the search box input
+        searchBox.addEventListener("input", filterImages);
+
+        // Event listener for the save button
+        saveListBtn.addEventListener("click", saveList);
+
+        // Event listener for the "View Saved Lists" button
+        viewSavedListsBtn.addEventListener("click", viewSavedLists);
+
+        // Initial load of images
+        loadImages();
+    </script>
+</body>
+</html>

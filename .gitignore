@@ -1,0 +1,38 @@
+# Node.js
+node_modules/
+
+# npm logs
+npm-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+
+# Build output
+/dist
+/build
+
+# IDEs and Editors
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Coverage folder from testing
+coverage/
+
+# Dependency directories
+/bower_components
+
+# .env.local and .env.* files
+.env.local
+.env.*
+
+# Temporary files
+*.swp

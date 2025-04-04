@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Saved Lists</title>
+</head>
+<body>
+    <h1>Saved Lists</h1>
+
+    <% if (lists.length > 0) { %>
+        <% lists.forEach(function(list) { %>
+            <div>
+                <h3><%= list.name %></h3>
+                <ul>
+                    <% list.items.forEach(function(item) { %>
+                        <li>
+                            <img src="<%= item.image_url %>" alt="HTTP <%= item.response_code %>" />
+                            <p>HTTP <%= item.response_code %></p>
+                        </li>
+                    <% }); %>
+                </ul>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <p>No saved lists available.</p>
+    <% } %>
+
+</body>
+</html>
